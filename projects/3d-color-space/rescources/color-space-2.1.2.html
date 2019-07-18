@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Interactive display of 3D color space, HSL, and RGB">
+    <meta name="keywords" content="3D color space, HSL, RGB, HTML5, THREE.JS">
+    <meta name="author" content="huihuangcoder">
+    <title>3D Color Space</title>
+    <link rel="shortcut icon" href="resources/others/favicon.ico">
+    <link rel="apple-touch-icon" href="resources/others/favicon.png">
+    <!-- hue-wheel -->
+    <script src="https://cdn.jsdelivr.net/gh/huihuangcoder/hue-wheel/hue-wheel.v1.0.4.js"></script>
+    <!-- three.js -->
+    <script src="https://threejs.org/build/three.js"></script>
+    <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+    <!-- jquery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <!-- Popper -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <!-- roundslider -->
+    <!-- https://roundsliderui.com/ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/roundSlider/1.3.3/roundslider.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/roundSlider/1.3.2/roundslider.min.css" rel="stylesheet">
+    <!-- bootstrap-input-spinner -->
+    <!-- https://shaack.com/projekte/bootstrap-input-spinner/ -->
+    <script src="https://shaack.com/projekte/bootstrap-input-spinner/src/bootstrap-input-spinner.js"></script>
+    <style>
+      body {
+        font-family: Verdana, sans-serif;
+        box-sizing: border-box;
+        line-height: 1.2 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <div style="position: relative; display: block; height: 550px; width: 100%;">
+        <!-- outter slider BEGIN -->
+        <div id="slider"></div>
+        <script>
+          // create a roundslider
+          $(function(){
+            $("#slider").roundSlider({
+              radius: 240,
+              width: 15,
+              min: 0,
+              max: 360,
+              step: 1,
+              value: 90,
+              handleSize: 0,
+              startAngle: 0,
+              handleShape: 'square',
+              showTooltip: false,
+
+              drag: function(arg) {
+                hslPanelUpdate();
+              },
+            });
+          });
+        </script>
+        <style>
+          #slider {
+            position: absolute;
+            left: 50%;
+            top: 50px;
+            z-index: 1;
+          }
+
+          .rs-container {
+            left: -50%;
+          }
+
+          .rs-border {
+            border: 0px;
+          }
+              
+          .rslider {
+            display: inline-block;
+            margin-top: 200px;
+            margin-left: 200px;
+          }
+    
+          .rs-control .rs-bg-color {
+            background-color: rgba(255, 0, 255, 0);
+          }
+    
+          .rs-control .rs-path-color {
+            background-color: rgba(0, 255, 0, 0);
+          }
+    
+          #slider .rs-handle  {
+            background-color: transparent;
+            border: 40px solid transparent;
+            border-radius: 50%;
+            border-left-color: #00FF00; /* change handle color */
+            margin: -40px 0px 0px -20px !important;
+          }
+        </style>
+        <!-- outter slider END -->
+        <!-- hue wheel BEGIN -->
+        <div id="hue-wheel">
+          <canvas id="canvas"></canvas>
+        </div>
+        <script>
+          // hue wheel property obj
+          const huewheel = {
+            canvasID: 'canvas',
+            inner_radius: 200,
+            thickness: 20,
+            redStart: 330,
+            style: 0,
+          };
+
+          drawHueWheel(huewheel);
+        </script>
+        <style>
+          #hue-wheel {
+            position: absolute;
+            left: 50%;
+            top: 68px;
+            z-index: 0;
+          }
+
+          #canvas {
+            position: relative;
+            left: -50%;
+          }
+        </style>
+        <!-- hue wheel END -->
+        <!-- 3D color space BEGIN -->
+        <div id="color-space-3D"></div>
+        <div id="reset-view" class="button-all button1">RESET</div>
+        <style>
+          #color-space-3D {
+            position: absolute;
+            z-index: 100;
+            width: 400px;
+            left:0;
+            right:0;
+            margin: auto;
+            top: 88px;
+            border-radius: 50%;
+          }
+
+          #color-space-3D > canvas {
+            border-radius: 50%;
+          }
+
+          #reset-view {
+            /*display: inline-block;*/
+            width:70px;
+            height:25px;
+            margin: auto;
+            position: relative;
+            top: 430px;
+            text-align: center;
+            z-index: 101;
+            background-color: #e7e7e7;
+            border: 0px solid rgba(53, 53, 53, 0.295); 
+            border-radius: 3px;
+            padding-top: 2px;
+            /*font-family: Verdana, sans-serif;*/
+          }
+
+          .button-all {
+            cursor: pointer;
+            /*font-family: Verdana, sans-serif;*/
+          }
+
+          .button1:hover {
+            box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
+          }
+
+          .button1:active {
+            transform: translateY(4px);
+          }
+        </style>
+        <!-- 3D color space END-->
+      </div>
+    <script>
+        // create a three.js scene for 3D color space
+
+        const FULL = 255;
+        const LEN = 16;
+
+        // create a scene
+        let scene0 = new THREE.Scene();
+      
+        // set background color
+        //scene0.background = new THREE.Color(0xf0f0f0);
+      
+        // create parallel directional light source
+        let light = new THREE.DirectionalLight(0xffffff, 2);
+        light.position.set(FULL + 1, FULL + 1, FULL + FULL + 2);
+        scene0.add(light);
+      
+        // create a camera
+        // let camera0 = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // let camera0 = new THREE.PerspectiveCamera(90, 400 / 400, 0.1, 1000);
+        let camera0 = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
+
+        // create a renderer
+        let renderer0 = new THREE.WebGLRenderer( { antialias: true, alpha: true /* allow transparency */ } );
+        // transparent background
+        renderer0.setClearColor(0x000000, 0);
+        // make sure it will adapt HD display like retina
+        renderer0.setPixelRatio(window.devicePixelRatio ? window.devicePixelRatio : 1);
+        // renderer0.setSize(window.innerWidth, window.innerHeight);
+        renderer0.setSize(400, 400);
+
+        // document.body.appendChild(renderer0.domElement);
+        document.getElementById("color-space-3D").appendChild(renderer0.domElement);
+
+        // the atomic LEN*LEN*LEN cube
+        let geometry = new THREE.BoxBufferGeometry(LEN, LEN, LEN);
+
+        let x, y, z = 0;
+        // black (0,0,0) color rgb(0,0,0)
+        let major_colors = {
+          "black"     : [0   , 0   , 0   ],
+          "white"     : [FULL, FULL, FULL],
+          "red"       : [FULL, 0   , 0   ],
+          "green"     : [0   , FULL, 0   ],
+          "blue"      : [0   , 0   , FULL],
+          "yellow"    : [FULL, FULL, 0   ],
+          "cyan"      : [0   , FULL, FULL],
+          "magenta"   : [FULL, 0   , FULL],
+        };
+
+        // create color cubes for 8 corners of the color space
+        for (let color in major_colors) {
+          let rgb0 = major_colors[color];
+
+          // each corner has 4 color cubes, one at the corner, 
+          // and the rest three along x, y, z axes respectively
+          for (let i = 0; i < 4; i+= 1) {
+
+            let rgb = [-FULL, -FULL, -FULL];
+            let pos = [-FULL, -FULL, -FULL];
+
+            for (let idx = 0; idx < 3; idx+= 1) {
+              rgb[idx] = rgb0[idx];
+              pos[idx] = rgb0[idx];
+            }
+
+            if (i > 0) {
+              if (rgb[i - 1] === FULL) {
+                rgb[i - 1] -= (LEN + LEN);
+                pos[i - 1] -= LEN;
+              } 
+              if (rgb[i - 1] === 0) {
+                rgb[i - 1] += (LEN + LEN);
+                pos[i - 1] += LEN;
+              } 
+            }
+
+            //console.log(i + ":" + rgb + " @ " + pos);
+
+            let the_color_str = "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
+            // console.log(the_color_str);
+            let the_color = new THREE.Color(the_color_str);
+            //let mesh = new THREE.MeshLambertMaterial({color : the_color});
+            let mesh = new THREE.MeshBasicMaterial({color : the_color});
+            let color_cube = new THREE.Mesh(geometry, mesh);
+        
+            // let pos = rgb; and the center of the whole color space is (0,0,0)
+            color_cube.position.x = pos[0] - FULL * 0.5;
+            color_cube.position.y = pos[1] - FULL * 0.5;
+            color_cube.position.z = pos[2] - FULL * 0.5;
+
+            scene0.add(color_cube);
+          }
+        }
+
+        // create an outter dashed wire for the color space
+        let big_box = wiredCube(FULL + LEN);
+        let dashed_wire = new THREE.LineDashedMaterial( { color: 0x000000, dashSize: 16, gapSize: 16 } );
+        let outter_wire = new THREE.LineSegments(big_box, dashed_wire);
+        outter_wire.computeLineDistances();
+        scene0.add(outter_wire);
+
+        // the specific color cube to display in the color space
+        let init_mesh = new THREE.MeshBasicMaterial( { color : 0xf0000f, transparent : true, opacity : 0 } );
+        let sample_cube = new THREE.Mesh(geometry, init_mesh);
+        sample_cube.position.x = 0;
+        sample_cube.position.y = 0;
+        sample_cube.position.z = 0;
+        scene0.add(sample_cube);
+        
+        // move camera0‘s position along z axis to the given pos
+        camera0.position.z = 1.8 * FULL;
+        camera0.position.x = 1.8 * FULL;
+        camera0.position.y = 1.8 * FULL;
+
+        // camera movement limits and settings
+			  let controls = new THREE.OrbitControls( camera0, renderer0.domElement );
+			  controls.minDistance = FULL * 0.3;
+			  controls.maxDistance = 3 * FULL;
+        controls.maxPolarAngle = 2 * Math.PI;
+
+        // update when camera moves inspired by https://discoverthreejs.com/tips-and-tricks/
+        controls.addEventListener('change', renderScene);
+
+        // https://github.com/mrdoob/three.js/blob/master/examples/webgl_lines_dashed.html
+        // create a wired cube geometry
+        function wiredCube(size) {
+          let pos = size * 0.5;
+          let template = new THREE.BufferGeometry();
+          let vertices = [];
+
+          vertices.push(
+            /*
+             * 12 edges
+             *         +Z-axis
+             *     (--+)a-------b(+-+)
+             *         /|      /|
+             *   (-++)c-------d |(+++)
+             *        | |  0  | |            
+             *   (---)| e-----|-f(+--) +X-axis
+             *        |/      |/
+             *   (-+-)g-------h(++-)
+             *      +Y-axis
+             */
+            // e - g
+            - pos, - pos, - pos,
+            - pos,   pos, - pos,
+
+            // g - h
+            - pos,   pos, - pos,
+              pos,   pos, - pos,
+
+            // h - f
+              pos,   pos, - pos,
+              pos, - pos, - pos,
+
+            // f - e
+              pos, - pos, - pos,
+            - pos, - pos, - pos,
+
+            // a - c
+            - pos, - pos,   pos,
+            - pos,   pos,   pos,
+
+            // c - d
+            - pos,   pos,   pos,
+              pos,   pos,   pos,
+
+            // d - b
+              pos,   pos,   pos,
+              pos, - pos,   pos,
+
+            // b - a
+              pos, - pos,   pos,
+            - pos, - pos,   pos,
+
+            // e - a
+            - pos, - pos, - pos,
+            - pos, - pos,   pos,
+
+            // g - c
+            - pos,   pos, - pos,
+            - pos,   pos,   pos,
+
+            // h - d
+              pos,   pos, - pos,
+              pos,   pos,   pos,
+
+            // f - b
+              pos, - pos, - pos,
+              pos, - pos,   pos,
+          );
+
+          template.addAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+
+          return template;
+        }
+
+        // update sample_cube's color and its position in the color space
+        function updateSampleCube(red, green, blue) {
+          // get cube's color ready
+          let r = Number(red);
+          let g = Number(green);
+          let b = Number(blue);
+          
+          // update cube's postion
+          sample_cube.position.x = r - FULL * 0.5;
+          sample_cube.position.y = g - FULL * 0.5;
+          sample_cube.position.z = b - FULL * 0.5;
+
+          // update cube's color
+          sample_cube.material.color.setRGB(r / 255, g / 255, b / 255);
+          sample_cube.material.opacity = 1;
+
+          renderScene();
+        }
+
+        // move camera back to its initial state
+        function resetCamera() {
+          controls.reset();
+        }
+
+        // render scene loop (bad performance, replaced by controls.addEventListener('change', renderScene);)
+        /*
+        function animation() {
+          requestAnimationFrame(animation);
+          renderer0.render(scene0, camera0);
+        }
+        */
+        function renderScene() {
+          renderer0.render(scene0, camera0);
+        }
+
+        renderScene();
+      </script>
+      <style>
+        .color-base {
+          position: relative;
+          width: 20px;
+          height: 20px;
+          display: inline-block;
+          margin-bottom: 10px;
+          text-align: center;
+          color: white;
+          border-radius: 50%;
+        }
+
+        .space-20px {
+          height: 20px;
+        }
+
+        .mb-10px {
+          margin-bottom: 10px;
+        }
+
+        .sm-fs{
+          font-size: 0.9rem !important;
+        }
+
+        #display-color {
+          height: calc(1.5em + .5rem);
+          background-color: #00FF00;
+        }
+      </style>
+      <div id="control-panel" style="position: relative; width: 400px; margin: auto;">
+        <div id="hsl-panel">
+          <div class="container">
+            <div class="row">
+              <div class="col-sm text-center">
+                <div class="mb-10px"><span class="sm-fs">Saturation %</span></div>
+                <div>
+                    <input id="saturation-slider" class="hsl-s form-control-sm" type="number" min="0" max="100" value="100" data-suffix="">
+                </div>
+              </div>
+              <div class="col-sm text-center">
+                  <div class="mb-10px"><span id="color-hex" class="sm-fs">#00FF00</span></div>
+                  <div id="display-color" class=""></div>
+              </div>
+              <div class="col-sm text-center">
+                  <div class="mb-10px"><span class="sm-fs">Lightness %</span></div>
+                  <div>
+                      <input id="lightness-slider" class="hsl-s form-control-sm" type="number" min="0" max="100" value="50" data-suffix="">
+                  </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="space-20px"></div>
+        <div id="rgb-panel">
+          <div class="container">
+            <div class="row">
+              <div class="col-sm text-center">
+                  <div class="color-base" style="background-color: rgb(255, 0, 0);">
+                    <span class="">R</span>
+                  </div>
+                  <div>
+                      <input id="red-slider" class="rgb-s form-control-sm" type="number" min="0" max="255" value="0" data-suffix="">
+                  </div>
+              </div>
+              <div class="col-sm text-center">
+                  <div class="color-base" style="background-color: rgb(0, 255, 0);">
+                    <span class="">G</span>
+                  </div>
+                  <div>
+                      <input id="green-slider" class="rgb-s form-control-sm" type="number" min="0" max="255" value="0" data-suffix="">
+                  </div>
+              </div>
+              <div class="col-sm text-center">
+                  <div class="color-base" style="background-color: rgb(0, 0, 255);">
+                    <span class="">B</span>
+                  </div>
+                  <div>
+                      <input id="blue-slider" class="rgb-s form-control-sm" type="number" min="0" max="255" value="0" data-suffix="">
+                  </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div></div>
+        </div>
+        <style>
+        </style>
+        <script>
+          // bootstrap-input-spinner setting
+          let config = {
+            buttonsWidth: "15px;",
+          };
+
+          $("input[type='number']").inputSpinner(config);
+        </script>
+      </div>
+      <script>
+        // https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+        function rgb2hex(rgb) {
+          let rgb_combined = rgb[2] | (rgb[1] << 8) | (rgb[0] << 16);
+          return '#' + (0x1000000 + rgb_combined).toString(16).slice(1);
+        }
+
+        // update the color div element
+        function updateDisplay(rgb) {
+          let hex_str = rgb2hex(rgb);
+          
+          $("#color-hex").text(hex_str.toUpperCase());
+          $("#display-color").css('background-color', hex_str);
+          setHanleColor(hex_str);
+        }
+
+        // update roundslider's handle's color
+        function setHanleColor(hex) {
+          $("#slider .rs-handle").css('border-left-color', hex);
+        }
+
+        // update div element color, 
+        // and update color cube in the color space
+        function updateColor(rgb) {
+          updateDisplay(rgb);
+          updateSampleCube(rgb[0], rgb[1], rgb[2]);
+
+        }
+
+        // use r, g, b value to update the color div and color cube 
+        function rgbPanelUpdate() {
+          // roundSlider obj
+          let rsObj = $("#slider").data("roundSlider");
+
+          // get r, g, b values from bootstrap-input-spinner
+          let red = $("#red-slider").val();
+          let green = $("#green-slider").val();
+          let blue = $("#blue-slider").val();
+
+          let rgb = [red, green, blue];
+
+          let hsl = rgb2hsl(red, green, blue);
+          let hue = hsl[0];
+
+          // calculate roundSlider's handle's position (angle)
+          let angle0 = (hue + 330) % 360;
+          let angle = (angle0 < 180) ? (180 - angle0) : (540 - angle0);
+          angle = angle % 360;
+
+          // update roundSlider's handle's angle
+          rsObj.setValue(angle);
+
+          // update sat and lig value in bootstrap-input-spinners
+          $("#saturation-slider").val(hsl[1] * 100);
+          $("#lightness-slider").val(hsl[2] * 100);
+
+          updateColor(rgb);
+        }
+
+        // use hue (roundSlider's value), saturation, and lightness
+        // to update the color div and color cube
+        function hslPanelUpdate() {
+          let rsObj = $("#slider").data("roundSlider");
+
+          let angle0 = rsObj.getValue();
+          /* 
+           * compute angle under regular angle system (angle increases counterclockwise)
+           * angle0 increases clockwise and it is 0 degree when it is at 180 degree of regular angle system
+           * except angle0, all other angles and hue are "measured" under regular angle system
+           */
+          let angle = (angle0 < 180) ? (180 - angle0) : (540 - angle0);
+          angle = angle % 360;
+          
+          let saturation = $("#saturation-slider").val() * 0.01;
+          let lightness = $("#lightness-slider").val() * 0.01;
+
+          // get hue via angle and the hue wheel's attributes
+          let hue = getHue(330 /* where red (hue = 0) starts */, angle, 0 /* style 0 (clockwise red -> blue -> green -> red) */);
+          // console.log("H: " + hue + " S: " + saturation + " L: " + lightness);
+          let rgb = hsl2rgb(hue, saturation, lightness);
+          // console.log("rgb: " + rgb);
+          // updateSampleCube(rgb[0], rgb[1], rgb[2]);
+          
+          $("#red-slider").val(rgb[0]);
+          $("#green-slider").val(rgb[1]);
+          $("#blue-slider").val(rgb[2]);
+          
+          updateColor(rgb);
+        }
+
+        // use reset button to reset camera's position
+        $("#reset-view").click(resetCamera);
+
+        // bootstrap-input-spinners events for hsl modification
+        $(".hsl-s").on("change", hslPanelUpdate);
+        $(".hsl-s").on("input", hslPanelUpdate);
+
+        // bootstrap-input-spinners events for rgb modification
+        $(".rgb-s").on("change", rgbPanelUpdate);
+        $(".rgb-s").on("input", rgbPanelUpdate);
+      </script>
+    </div>
+  </body>
+</html>
