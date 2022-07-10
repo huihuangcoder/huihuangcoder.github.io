@@ -370,7 +370,8 @@
               pos, - pos,   pos,
           );
 
-          template.addAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+          // template.addAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) ); #addAttribute on longer supported
+	  template.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
 
           return template;
         }
